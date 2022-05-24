@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
-const { get } = require('express/lib/response');
+// const { get } = require('express/lib/response');
 const app = express();
 const port = process.env.PORT || 5000;
 require('dotenv').config();
@@ -37,6 +37,7 @@ async function run() {
     const toolsCollection = client.db("manufacturer_care").collection("tools");
     const userCollection = client.db("manufacturer_care").collection("users");
     const orderCollection = client.db("manufacturer_care").collection("ordered");
+    const reviewCollection = client.db("manufacturer_care").collection("review");
     
     // get all services tools
     app.get("/tools", async (req, res) => {
@@ -52,52 +53,53 @@ async function run() {
       const query = {_id:ObjectId(id)};
       const result = await toolsCollection.findOne(query);
       res.send(result);
-      console.log(req);
+      // console.log(req);
     })
 
     // my orders
     app.get('/order', async (req, res)=>{
       const query ={}
       const cursor = orderCollection.find(query);
-        const result = await cursor.toArray()
-        res.send(result)
-
-
+      const result = await cursor.toArray()
+      res.send(result)
     })
+    // delete service from db by id
     app.delete('/order/:id', async (req, res)=>{
-        const id = req.params.id;
-          
-            const query ={_id:ObjectId(id)}
-            const result = await orderCollection.deleteOne(query);
-          res.send(result)
-  })
-        
+      const id = req.params.id;
+      const query ={_id:ObjectId(id)}
+      const result = await orderCollection.deleteOne(query);
+      res.send(result)
+    })
+    // ordered and save service product in db
     app.post('/order',async(req, res)=>{
-            const ordered = (req.body.orderInfo);
-          
-            const result = await orderCollection.insertOne(ordered);
-            res.send(result);
+      const ordered = (req.body.orderInfo);
+      const result = await orderCollection.insertOne(ordered);
+      res.send(result);
+    })
 
-        })
+    // add review
+    app.post('/review',async(req, res)=>{
+      const review =req.body;
+      console.log(review);
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    })
 
-    // user create
+    // user create and save information to database
     app.put('/user/:email', async(req, res) => {
-      
-   
-     
       const user = req.body;
       if(user ){
-        console.log( user.email, user.displayName)
+        // console.log( user.email, user.displayName)
         const email = user.email
         const filter = {email: email};
         const options = { upsert: true };
 
-      const updateDoc = {
-        $set:{email: email, displayName: user.displayName},
-      };
-      const result = await userCollection.updateOne(filter, updateDoc, options);
-      const token = jwt.sign({email: email}, process.env.ACCESS_TOKEN_SECRET);
-      res.send({result, token});
+        const updateDoc = {
+          $set:{email: email, displayName: user.displayName},
+        };
+        const result = await userCollection.updateOne(filter, updateDoc, options);
+        const token = jwt.sign({email: email}, process.env.ACCESS_TOKEN_SECRET);
+        res.send({result, token});
       }
     })
     
