@@ -36,6 +36,7 @@ async function run() {
     await client.connect();
     const toolsCollection = client.db("manufacturer_care").collection("tools");
     const userCollection = client.db("manufacturer_care").collection("users");
+    const orderCollection = client.db("manufacturer_care").collection("ordered");
     
     // get all services tools
     app.get("/tools", async (req, res) => {
@@ -54,6 +55,30 @@ async function run() {
       console.log(req);
     })
 
+    // my orders
+    app.get('/order', async (req, res)=>{
+      const query ={}
+      const cursor = orderCollection.find(query);
+        const result = await cursor.toArray()
+        res.send(result)
+
+
+    })
+    app.delete('/order/:id', async (req, res)=>{
+        const id = req.params.id;
+          
+            const query ={_id:ObjectId(id)}
+            const result = await orderCollection.deleteOne(query);
+          res.send(result)
+  })
+        
+    app.post('/order',async(req, res)=>{
+            const ordered = (req.body.orderInfo);
+          
+            const result = await orderCollection.insertOne(ordered);
+            res.send(result);
+
+        })
 
     // user create
     app.put('/user/:email', async(req, res) => {
