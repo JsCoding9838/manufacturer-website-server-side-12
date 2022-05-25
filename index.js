@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 5000;
 require('dotenv').config();
+const stripe = require("stripe")('sk_test_51L3K1BGmCBN0z0XUOuHywq5iARLGLA7d91veJVvIrU2oVBzzqV37HcmSBsi5L1Hs2V0fGA8GqOnG9zogcXOolKXE00rQdrO8Sy');
 
 // middleware
 app.use(cors());
@@ -38,6 +39,7 @@ async function run() {
     const userCollection = client.db("manufacturer_care").collection("users");
     const orderCollection = client.db("manufacturer_care").collection("ordered");
     const reviewCollection = client.db("manufacturer_care").collection("review");
+    const paymentCollection = client.db("manufacturer_care").collection("payments");
     
     // get all services tools
     app.get("/tools", async (req, res) => {
@@ -57,8 +59,9 @@ async function run() {
     })
 
     // my orders
-    app.get('/order', async (req, res)=>{
-      const query ={}
+    app.get('/order/:email', async (req, res)=>{
+      const email = req.params.email;
+      const query ={email:email}
       const cursor = orderCollection.find(query);
       const result = await cursor.toArray()
       res.send(result)
@@ -77,13 +80,48 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/order/:id', async (req, res)=>{
+      const id = req.params.id;
+      // console.log(id)
+     
+         
+          const query ={_id:ObjectId(id)}
+          const result = await orderCollection.findOne(query);
+        res.send(result)
+})
+
+app.patch('/order/:id', async (req, res)=>{
+  const id = req.params.id;
+  const payment=req.body
+  const filter ={_id:ObjectId(id)}
+  
+ 
+  const updateDoc = {
+    $set: {
+      paid:true,
+      TransitionId:payment.transactionId
+    },
+  };
+  const result = await orderCollection.updateOne(filter, updateDoc);
+  const result1 = await paymentCollection.insertOne(payment);
+  res.send({result:result, result1:result1});
+  
+})
+
     // add review
     app.post('/review',async(req, res)=>{
       const review =req.body;
-      console.log(review);
+      // console.log(review);
       const result = await reviewCollection.insertOne(review);
       res.send(result);
     })
+
+    app.get("/review", async (req, res) => {
+      const query = {};
+      const cursor = reviewCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     // user create and save information to database
     app.put('/user/:email', async(req, res) => {
@@ -102,6 +140,25 @@ async function run() {
         res.send({result, token});
       }
     })
+    app.post("/payment", async (req, res) => {
+         
+      const price = parseInt(req.body.totalprice)
+      // console.log(price)
+      const amount = price*100 
+     
+       const paymentIntent = await stripe.paymentIntents.create({
+         amount: amount,
+         currency: "usd",
+         automatic_payment_methods: {
+           enabled: true,
+         },
+     
+       })
+       res.send({
+         clientSecret: paymentIntent.client_secret,
+       });
+     
+     })
     
   } 
   finally {
@@ -109,10 +166,6 @@ async function run() {
   }
 }
 run().catch(console.dir);
-
-
-
-
 
 
 
