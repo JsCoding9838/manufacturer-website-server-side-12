@@ -49,6 +49,24 @@ async function run() {
       const services = await cursor.toArray();
       res.send(services);
     });
+    //now get all services
+    app.delete('/tools/:id', async (req, res) => {
+      const id = req.params.id;
+      console.log(id)
+      const query = { _id: ObjectId(id) }
+      const result = await toolsCollection.deleteOne(query);
+      res.send(result)
+
+    })
+    //now get all services
+    app.post('/tools', async (req, res) => {
+
+            const product = req.body;
+            console.log(product);
+      
+            const result = await toolsCollection.insertOne(product);
+            res.send(result);
+          })
 
     // get a specific service tool by id
     app.get('/products/:id', async(req, res) =>{
@@ -200,6 +218,13 @@ async function run() {
 
 
 
+    })
+     app.get('/user/:id', async (req, res) => {
+      const email = req.params.id;
+
+      const query = { email: email }
+      const result = await userCollection.findOne(query);
+      res.send(result)
     })
 
 
