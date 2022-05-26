@@ -176,6 +176,33 @@ async function run() {
             const result = await cursor.toArray()
             res.send(result)
           })
+         //now for create new admin 
+          app.put('/user/admin/:id', async (req, res) => {
+      const email = req.params.id;
+      const admin = req.body.admin
+
+      const query = { email: email }
+      const options = { upsert: true };
+      const user = {
+        $set: {
+          rule: admin.rule
+        },
+      };
+      const result = await userCollection.updateOne(query, user, options);
+      res.send(result)
+    })
+    //now for admin remove 
+    app.patch('/user/admin/:id', async (req, res) => {
+      const email = req.params.id;
+      const query = { email: email }
+      const result = await userCollection.findOne(query);
+
+
+
+
+    })
+
+
   } 
   finally {
 
