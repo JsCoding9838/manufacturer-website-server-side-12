@@ -33,6 +33,7 @@ function verifyJWT(req, res, next){
 }
 
 async function run() {
+
   try {
     await client.connect();
     const toolsCollection = client.db("manufacturer_care").collection("tools");
@@ -85,28 +86,37 @@ async function run() {
       // console.log(id)
      
          
-          const query ={_id:ObjectId(id)}
-          const result = await orderCollection.findOne(query);
-        res.send(result)
-})
+      const query ={_id:ObjectId(id)}
+      const result = await orderCollection.findOne(query);
+      res.send(result)
+    })
+    //all order get now
+    app.get('/order', async (req, res) => {
+     
 
-app.patch('/order/:id', async (req, res)=>{
-  const id = req.params.id;
-  const payment=req.body
-  const filter ={_id:ObjectId(id)}
-  
- 
-  const updateDoc = {
-    $set: {
-      paid:true,
-      TransitionId:payment.transactionId
-    },
-  };
-  const result = await orderCollection.updateOne(filter, updateDoc);
-  const result1 = await paymentCollection.insertOne(payment);
-  res.send({result:result, result1:result1});
-  
-})
+            const query = {}
+            const cursor = orderCollection.find(query);
+            const result = await cursor.toArray()
+            res.send(result)
+      
+      
+          })
+
+    app.patch('/order/:id', async (req, res)=>{
+      const id = req.params.id;
+      const payment=req.body
+      const filter ={_id:ObjectId(id)}
+      const updateDoc = {
+        $set: {
+          paid:true,
+          TransitionId:payment.transactionId
+        },
+      };
+      const result = await orderCollection.updateOne(filter, updateDoc);
+      const result1 = await paymentCollection.insertOne(payment);
+      res.send({result:result, result1:result1});
+    
+    })
 
     // add review
     app.post('/review',async(req, res)=>{
@@ -141,25 +151,31 @@ app.patch('/order/:id', async (req, res)=>{
       }
     })
     app.post("/payment", async (req, res) => {
-         
+        
       const price = parseInt(req.body.totalprice)
       // console.log(price)
-      const amount = price*100 
-     
-       const paymentIntent = await stripe.paymentIntents.create({
-         amount: amount,
-         currency: "usd",
-         automatic_payment_methods: {
-           enabled: true,
-         },
-     
-       })
-       res.send({
-         clientSecret: paymentIntent.client_secret,
-       });
-     
-     })
+      const amount = price * 100;
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
     
+      })
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    })
+    //now users
+    app.get('/user', async (req, res) => {
+
+            const query = {};
+            const cursor = userCollection.find(query);
+            const result = await cursor.toArray()
+            res.send(result)
+          })
   } 
   finally {
 
